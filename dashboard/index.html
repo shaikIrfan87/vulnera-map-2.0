@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VULNERA-MAP Enterprise | Unified Master Control Center</title>
+    <style>
+        :root {
+            --bg-dark: #0b0f19;
+            --card-bg: #161e2e;
+            --accent: #3b82f6;
+            --green: #10b981;
+            --red: #ef4444;
+            --yellow: #f59e0b;
+            --text-light: #f8fafc;
+            --text-dim: #94a3b8;
+            --border: #1e293b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            margin: 0;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+
+        .brand span {
+            color: var(--accent);
+        }
+
+        .role-badge {
+            font-size: 0.8rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            font-weight: 600;
+            margin-right: 12px;
+        }
+
+        .btn-group button, .btn {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text-light);
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin-right: 6px;
+        }
+
+        .btn:hover, .btn-group button:hover {
+            background-color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .btn-primary { background-color: var(--accent); border-color: var(--accent); }
+        .btn-danger { background-color: rgba(239, 68, 68, 0.2); border-color: var(--red); color: var(--red); }
+        .btn-success { background-color: rgba(16, 185, 129, 0.2); border-color: var(--green); color: var(--green); }
+        .btn-disabled { opacity: 0.5; cursor: not-allowed !important; }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .card-header {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .status-ok { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
+        .status-err { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
+
+        .topology-map {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            min-height: 120px;
+            padding: 12px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+
+        .node {
+            width: 140px;
+            padding: 12px;
+            border-radius: 8px;
+            background: var(--border);
+            text-align: center;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+
+        .status-active { background-color: var(--green); box-shadow: 0 0 8px var(--green); }
+        .status-offline { background-color: var(--red); box-shadow: 0 0 8px var(--red); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+        }
+
+        th { color: var(--text-dim); }
+
+        .badge {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        .badge-critical { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
+        .badge-high { background: rgba(249, 115, 22, 0.2); color: #f97316; border: 1px solid #f97316; }
+
+        #console-output {
+            background-color: #000;
+            color: #10b981;
+            font-family: monospace;
+            font-size: 0.85rem;
+            padding: 15px;
+            border-radius: 8px;
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="brand">VULNERA-MAP <span>MASTER CONTROL CENTER</span></div>
+        <div>
+            <span class="role-badge" id="role-display">Role: Admin</span>
+            <button class="btn" onclick="toggleRole()">Switch Role</button>
+            <button class="btn-success action-btn" onclick="runFullDiagnostics()">▶ Run Diagnostics</button>
+            <button class="btn" onclick="exportData('csv')">CSV</button>
+            <button class="btn" onclick="exportData('json')">SIEM JSON</button>
+            <button class="btn" onclick="exportData('pdf')">PDF</button>
+        </div>
+    </header>
+
+    <!-- Subsystem Health Indicators -->
+    <div class="grid-3">
+        <div class="card">
+            <div class="card-header">
+                Phase 1: PKI & DB Stack
+                <span id="pki-status" class="status-badge status-ok">OPERATIONAL</span>
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-dim);">
+                mTLS Certs: Active | Queue Latency: < 0.1ms
+            </div>
+            <div style="margin-top: 10px;">
+                <button class="btn action-btn" onclick="triggerAction('mtls')">Test mTLS Handshake</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                Phase 2 & 3: Engines
+                <span id="engine-status" class="status-badge status-ok">ACTIVE</span>
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-dim);">
+                NVD Offline CVE Matcher & AST Taint Parser
+            </div>
+            <div style="margin-top: 10px;">
+                <button class="btn action-btn" onclick="triggerAction('ast')">Run AST Scan</button>
+                <button class="btn action-btn" onclick="triggerAction('secret')">Run Secret Scan</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                Phase 4: Real-time Tracing
+                <span id="tracing-status" class="status-badge status-ok">MONITORING</span>
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-dim);">
+                Syscall Event Tracer (< 500ms Latency)
+            </div>
+            <div style="margin-top: 10px;">
+                <button class="btn-danger action-btn" onclick="triggerAction('shell')">Simulate Shell Attack</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="card">
+            <div class="card-header">
+                Live Host Topology Map
+                <span style="font-size: 0.85rem; color: var(--text-dim);">Dynamic mTLS Heartbeats</span>
+            </div>
+            <div class="topology-map" id="topology-map">
+                <!-- Dynamically Rendered -->
+            </div>
+
+            <div class="card-header" style="margin-top: 25px;">
+                Deduplicated Vulnerability & Asset Tracker
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Title / CVE</th>
+                        <th>Severity</th>
+                        <th>Asset Path</th>
+                        <th>Hosts</th>
+                    </tr>
+                </thead>
+                <tbody id="vuln-table">
+                    <!-- Dynamically Rendered -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Interactive Execution Console Log</div>
+            <div id="console-output">
+[SYSTEM READY] VULNERA-MAP Enterprise Master Control Center Initialized.
+Click 'Run Diagnostics' or any control button to test subsystems.
+            </div>
+
+            <div class="card-header" style="margin-top: 20px;">System Anomaly Log</div>
+            <div id="anomaly-stream" style="font-family: monospace; font-size: 0.8rem; color: #38bdf8;">
+                <!-- Live Event Stream -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentRole = "Admin";
+
+        function toggleRole() {
+            currentRole = currentRole === "Admin" ? "Auditor" : "Admin";
+            document.getElementById("role-display").innerText = `Role: ${currentRole}`;
+            logToConsole(`User role switched to: ${currentRole}`);
+            
+            const btns = document.querySelectorAll(".action-btn");
+            btns.forEach(b => {
+                if (currentRole === "Auditor") {
+                    b.classList.add("btn-disabled");
+                } else {
+                    b.classList.remove("btn-disabled");
+                }
+            });
+        }
+
+        function logToConsole(msg) {
+            const consoleEl = document.getElementById('console-output');
+            const timeStr = new Date().toLocaleTimeString();
+            consoleEl.innerHTML += `\n[${timeStr}] ${msg}`;
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        async function fetchState() {
+            try {
+                const res = await fetch('/api/state');
+                const data = await res.json();
+                
+                // Render Nodes
+                const mapEl = document.getElementById('topology-map');
+                mapEl.innerHTML = '';
+                data.nodes.forEach(node => {
+                    const nodeDiv = document.createElement('div');
+                    nodeDiv.className = 'node';
+                    const isOnline = node.status === 'ACTIVE';
+                    nodeDiv.innerHTML = `
+                        <div style="font-weight: 600;">${node.hostname}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-dim); margin: 4px 0;">${node.ip_address}</div>
+                        <div>
+                            <span class="status-dot ${isOnline ? 'status-active' : 'status-offline'}"></span>
+                            <span style="font-size: 0.8rem; font-weight: 600; color: ${isOnline ? 'var(--green)' : 'var(--red)'};">${node.status}</span>
+                        </div>
+                    `;
+                    mapEl.appendChild(nodeDiv);
+                });
+
+                // Render Table
+                const tableEl = document.getElementById('vuln-table');
+                tableEl.innerHTML = '';
+                data.vulnerabilities.forEach(v => {
+                    const row = document.createElement('tr');
+                    const sevClass = v.severity.toLowerCase() === 'critical' ? 'badge-critical' : 'badge-high';
+                    row.innerHTML = `
+                        <td>${v.vuln_id}</td>
+                        <td><strong>${v.cve_id || v.rule_id}</strong><br><span style="font-size: 0.8rem; color: var(--text-dim);">${v.title}</span></td>
+                        <td><span class="badge ${sevClass}">${v.severity}</span></td>
+                        <td style="font-family: monospace;">${v.path}</td>
+                        <td>${v.host_count} Host(s)</td>
+                    `;
+                    tableEl.appendChild(row);
+                });
+
+                // Render Anomalies
+                const anomalyEl = document.getElementById('anomaly-stream');
+                anomalyEl.innerHTML = '';
+                data.anomalies.forEach(a => {
+                    const div = document.createElement('div');
+                    div.style.marginBottom = '8px';
+                    div.style.borderBottom = '1px solid var(--border)';
+                    div.style.paddingBottom = '4px';
+                    div.innerHTML = `[${a.type}] <strong>${a.subtype}</strong><br>${a.description || a.path || a.command}`;
+                    anomalyEl.appendChild(div);
+                });
+
+            } catch (err) {
+                logToConsole("ERROR connecting to Hub API: " + err);
+            }
+        }
+
+        async function triggerAction(action) {
+            if (currentRole === "Auditor") {
+                logToConsole("PERMISSION DENIED: Auditor role cannot execute control actions.");
+                return;
+            }
+            logToConsole(`Executing system action: '${action}'...`);
+            try {
+                const res = await fetch(`/api/control/${action}`, { 
+                    method: 'POST',
+                    headers: { 'X-User-Role': currentRole }
+                });
+                const data = await res.json();
+                logToConsole(`RESULT: ${data.message}`);
+                fetchState();
+            } catch (err) {
+                logToConsole(`ACTION FAILED: ${err}`);
+            }
+        }
+
+        async function runFullDiagnostics() {
+            await triggerAction('diagnostics');
+        }
+
+        function exportData(type) {
+            window.open(`/api/export/${type}`, '_blank');
+        }
+
+        fetchState();
+        setInterval(fetchState, 3000);
+    </script>
+</body>
+</html>

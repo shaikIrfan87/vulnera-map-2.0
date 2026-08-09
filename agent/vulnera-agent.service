@@ -1,0 +1,17 @@
+[Unit]
+Description=VULNERA-MAP Enterprise Endpoint Agent Daemon
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/vulnera-agent
+Restart=always
+RestartSec=5
+User=root
+CPUQuota=5%
+MemoryMax=50M
+CapabilityBoundingSet=CAP_SYS_ADMIN CAP_NET_RAW CAP_BPF
+AmbientCapabilities=CAP_SYS_ADMIN CAP_NET_RAW CAP_BPF
+
+[Install]
+WantedBy=multi-user.target
