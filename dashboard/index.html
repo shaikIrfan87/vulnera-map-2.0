@@ -72,15 +72,14 @@
             border-color: var(--accent);
         }
 
-        .btn-primary { background-color: var(--accent); border-color: var(--accent); }
-        .btn-danger { background-color: rgba(239, 68, 68, 0.2); border-color: var(--red); color: var(--red); }
         .btn-success { background-color: rgba(16, 185, 129, 0.2); border-color: var(--green); color: var(--green); }
+        .btn-danger { background-color: rgba(239, 68, 68, 0.2); border-color: var(--red); color: var(--red); }
         .btn-disabled { opacity: 0.5; cursor: not-allowed !important; }
 
-        .grid-3 {
+        .grid-4 {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 20px;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 15px;
             margin-bottom: 20px;
         }
 
@@ -98,9 +97,9 @@
         }
 
         .card-header {
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             font-weight: 600;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -114,7 +113,6 @@
         }
 
         .status-ok { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
-        .status-err { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
 
         .topology-map {
             display: flex;
@@ -176,7 +174,7 @@
             font-size: 0.85rem;
             padding: 15px;
             border-radius: 8px;
-            height: 200px;
+            height: 180px;
             overflow-y: auto;
             border: 1px solid var(--border);
         }
@@ -184,7 +182,7 @@
 </head>
 <body>
     <header>
-        <div class="brand">VULNERA-MAP <span>MASTER CONTROL CENTER</span></div>
+        <div class="brand">VULNERA-MAP <span>ENTERPRISE CONTROL CENTER</span></div>
         <div>
             <span class="role-badge" id="role-display">Role: Admin</span>
             <button class="btn" onclick="toggleRole()">Switch Role</button>
@@ -192,48 +190,63 @@
             <button class="btn" onclick="exportData('csv')">CSV</button>
             <button class="btn" onclick="exportData('json')">SIEM JSON</button>
             <button class="btn" onclick="exportData('pdf')">PDF</button>
+            <button class="btn" onclick="exportData('jira')">Jira Payload</button>
+            <button class="btn" onclick="exportData('syslog')">Syslog Stream</button>
         </div>
     </header>
 
-    <!-- Subsystem Health Indicators -->
-    <div class="grid-3">
+    <!-- Subsystem Health & Governance Indicators -->
+    <div class="grid-4">
         <div class="card">
             <div class="card-header">
-                Phase 1: PKI & DB Stack
-                <span id="pki-status" class="status-badge status-ok">OPERATIONAL</span>
+                Phase 1: PKI & DB
+                <span class="status-badge status-ok">OPERATIONAL</span>
             </div>
-            <div style="font-size: 0.85rem; color: var(--text-dim);">
-                mTLS Certs: Active | Queue Latency: < 0.1ms
+            <div style="font-size: 0.8rem; color: var(--text-dim);">
+                mTLS Certs | WAL DB Concurrency
             </div>
             <div style="margin-top: 10px;">
-                <button class="btn action-btn" onclick="triggerAction('mtls')">Test mTLS Handshake</button>
+                <button class="btn action-btn" onclick="triggerAction('mtls')">Test mTLS</button>
             </div>
         </div>
 
         <div class="card">
             <div class="card-header">
-                Phase 2 & 3: Engines
-                <span id="engine-status" class="status-badge status-ok">ACTIVE</span>
+                Phase 2/3: Engines
+                <span class="status-badge status-ok">ACTIVE</span>
             </div>
-            <div style="font-size: 0.85rem; color: var(--text-dim);">
-                NVD Offline CVE Matcher & AST Taint Parser
+            <div style="font-size: 0.8rem; color: var(--text-dim);">
+                NVD Offline CVE & AST Taint SAST
             </div>
             <div style="margin-top: 10px;">
-                <button class="btn action-btn" onclick="triggerAction('ast')">Run AST Scan</button>
-                <button class="btn action-btn" onclick="triggerAction('secret')">Run Secret Scan</button>
+                <button class="btn action-btn" onclick="triggerAction('ast')">AST Scan</button>
+                <button class="btn action-btn" onclick="triggerAction('secret')">Secrets</button>
             </div>
         </div>
 
         <div class="card">
             <div class="card-header">
-                Phase 4: Real-time Tracing
-                <span id="tracing-status" class="status-badge status-ok">MONITORING</span>
+                Phase 4: Tracing
+                <span class="status-badge status-ok">MONITORING</span>
             </div>
-            <div style="font-size: 0.85rem; color: var(--text-dim);">
-                Syscall Event Tracer (< 500ms Latency)
+            <div style="font-size: 0.8rem; color: var(--text-dim);">
+                Syscall Event Tracer (< 500ms)
             </div>
             <div style="margin-top: 10px;">
-                <button class="btn-danger action-btn" onclick="triggerAction('shell')">Simulate Shell Attack</button>
+                <button class="btn-danger action-btn" onclick="triggerAction('shell')">Simulate Shell</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                Compliance Mapping
+                <span class="status-badge status-ok" id="compliance-score">100% Score</span>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-dim);" id="compliance-details">
+                PCI-DSS 4.0, SOC 2, NIST 800-53
+            </div>
+            <div style="margin-top: 10px;">
+                <button class="btn" onclick="window.open('/api/compliance', '_blank')">Audit Report</button>
             </div>
         </div>
     </div>
@@ -242,7 +255,7 @@
         <div class="card">
             <div class="card-header">
                 Live Host Topology Map
-                <span style="font-size: 0.85rem; color: var(--text-dim);">Dynamic mTLS Heartbeats</span>
+                <span style="font-size: 0.85rem; color: var(--text-dim);">Multi-Tenancy Fleet</span>
             </div>
             <div class="topology-map" id="topology-map">
                 <!-- Dynamically Rendered -->
@@ -270,8 +283,8 @@
         <div class="card">
             <div class="card-header">Interactive Execution Console Log</div>
             <div id="console-output">
-[SYSTEM READY] VULNERA-MAP Enterprise Master Control Center Initialized.
-Click 'Run Diagnostics' or any control button to test subsystems.
+[SYSTEM READY] VULNERA-MAP Enterprise Control Center Initialized.
+Connected to Multi-Tenancy Hierarchy: Acme Global Enterprise.
             </div>
 
             <div class="card-header" style="margin-top: 20px;">System Anomaly Log</div>
@@ -311,6 +324,11 @@ Click 'Run Diagnostics' or any control button to test subsystems.
                 const res = await fetch('/api/state');
                 const data = await res.json();
                 
+                // Update Compliance Badge
+                if (data.compliance) {
+                    document.getElementById('compliance-score').innerText = `${data.compliance.compliance_score} Compliance`;
+                }
+
                 // Render Nodes
                 const mapEl = document.getElementById('topology-map');
                 mapEl.innerHTML = '';
@@ -320,7 +338,7 @@ Click 'Run Diagnostics' or any control button to test subsystems.
                     const isOnline = node.status === 'ACTIVE';
                     nodeDiv.innerHTML = `
                         <div style="font-weight: 600;">${node.hostname}</div>
-                        <div style="font-size: 0.8rem; color: var(--text-dim); margin: 4px 0;">${node.ip_address}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-dim); margin: 2px 0;">${node.bu || 'Finance'} | ${node.env || 'AWS'}</div>
                         <div>
                             <span class="status-dot ${isOnline ? 'status-active' : 'status-offline'}"></span>
                             <span style="font-size: 0.8rem; font-weight: 600; color: ${isOnline ? 'var(--green)' : 'var(--red)'};">${node.status}</span>

@@ -4,12 +4,12 @@
 
 # 🛡️ VULNERA-MAP Enterprise
 
-**Next-Generation Cyber Threat Discovery, AST Taint Analysis, & Real-Time Event Tracing Platform**
+**Commercial Zero-Trust Cyber Threat Discovery, AST Taint SAST, Compliance Governance, & Event Tracing Platform**
 
-[![Build Status](https://img.shields.io/badge/Build-PASSING-10b981?style=for-the-badge&logo=github)](file:///c:/Users/ijgam/OneDrive/Desktop/vernal/tests/verification_harness.py)
-[![Security PKI](https://img.shields.io/badge/mTLS-TLS%201.3-3b82f6?style=for-the-badge&logo=letsencrypt)](file:///c:/Users/ijgam/OneDrive/Desktop/vernal/pki/mtls.py)
-[![Deterministic Engine](https://img.shields.io/badge/AST%20Taint-Zero%20AI%20Hallucination-8b5cf6?style=for-the-badge&logo=python)](file:///c:/Users/ijgam/OneDrive/Desktop/vernal/hub/ast_engine.py)
-[![Coverage](https://img.shields.io/badge/Verification-100%25-06b6d4?style=for-the-badge)](file:///c:/Users/ijgam/OneDrive/Desktop/vernal/run_tests.py)
+[![Build Status](https://img.shields.io/badge/Build-PASSING-10b981?style=for-the-badge&logo=github)](tests/verification_harness.py)
+[![Security PKI](https://img.shields.io/badge/mTLS-TLS%201.3-3b82f6?style=for-the-badge&logo=letsencrypt)](pki/mtls.py)
+[![Compliance Governance](https://img.shields.io/badge/Compliance-PCI--DSS%204.0%20%7C%20SOC%202-eab308?style=for-the-badge)](hub/enterprise_extensions.py)
+[![Auth & RBAC](https://img.shields.io/badge/Auth-JWT%20%2B%20SOC%202%20Audit-8b5cf6?style=for-the-badge)](hub/enterprise_extensions.py)
 
 ---
 
@@ -17,9 +17,9 @@
 
 ## 📌 Executive Overview
 
-**VULNERA-MAP Enterprise** is an enterprise-grade cybersecurity platform engineered to discover, trace, and aggregate vulnerabilities across multi-host environments with **0% AI hallucination risk**. 
+**VULNERA-MAP Enterprise** is a high-performance cybersecurity platform engineered to discover, trace, and aggregate vulnerabilities across multi-host enterprise fleets with **0% AI hallucination risk**. 
 
-It unifies **Known CVE Matching** (via offline local NVD/OSV mirrors), **Unknown Zero-Day AST Taint Tracking** (Source-to-Sink flow analysis), **Shannon Entropy Secret Detection** ($H > 4.5$), **Cryptographic Baseline Anomaly Detection**, and **Real-Time Kernel Event Tracing** (< 500ms latency) into a single interactive Master Control Center.
+It unifies **Known CVE Matching** (via offline local NVD/OSV mirrors), **Unknown Zero-Day AST Taint Tracking** (Source-to-Sink flow analysis), **Shannon Entropy Secret Detection** ($H > 4.5$), **Cryptographic Baseline Anomaly Detection**, **Real-Time Kernel Event Tracing** (< 500ms latency), and **Regulatory Compliance Mapping** (PCI-DSS 4.0, SOC 2 Type II, NIST SP 800-53) into a single interactive Master Control Center.
 
 ---
 
@@ -44,59 +44,52 @@ It unifies **Known CVE Matching** (via offline local NVD/OSV mirrors), **Unknown
 
 ---
 
-## 🔥 Key Subsystems & Technical Features
+## 🏢 Enterprise Commercial Capabilities
+
+| Component | Architecture & Capabilities | Module Link |
+|---|---|---|
+| **Multi-Tenancy Fleet Management** | Hierarchical asset tracking (`Organization -> Business Unit -> Environment`) e.g. `Finance -> Prod-AWS-US-East` | [hub/enterprise_extensions.py](hub/enterprise_extensions.py) |
+| **JWT Auth & SOC 2 Audit Trail** | HMAC-SHA256 JWT Token issuer/verifier (`/api/auth/login`) + tamper-proof immutable audit log (`audit_trail.log`) | [hub/enterprise_extensions.py](hub/enterprise_extensions.py) |
+| **Compliance Governance Engine** | Real-time mapping of findings to **PCI-DSS 4.0 (Req 6.3.1)**, **SOC 2 Type II (CC6.8)**, and **NIST SP 800-53 (SI-2)** | [hub/enterprise_extensions.py](hub/enterprise_extensions.py) |
+| **Enterprise Integrations** | Direct Jira ticket payload generation (`/api/export/jira`) and SIEM Syslog RFC 5424 streaming (`/api/export/syslog`) | [hub/server.py](hub/server.py) |
+| **Agent OTA Update Pipeline** | Silent agent update check API (`/api/agent/update`) returning cryptographic binary checksums | [hub/server.py](hub/server.py) |
+| **High-Concurrency DB Stack** | SQLite WAL mode with `busy_timeout=5000` & PostgreSQL/TimescaleDB abstraction adapter | [hub/db.py](hub/db.py) |
+
+---
+
+## 🔥 Key Subsystems & Core Engines
 
 ### 🔏 1. Zero-Trust mTLS PKI Infrastructure
-- **Module**: [`pki/mtls.py`](file:///c:/Users/ijgam/OneDrive/Desktop/vernal/pki/mtls.py)
-- **Features**: Generates internal Root CA, Central Hub server certificates, and Go Agent client certificates. Enforces TLS 1.3 mutual client-certificate authentication (`ssl.CERT_REQUIRED`) and immediately drops untrusted/self-signed rogue connections.
+- **Module**: [pki/mtls.py](pki/mtls.py)
+- **Features**: Generates internal Root CA, Central Hub server certificates, and Go Agent client certificates. Enforces TLS 1.3 mutual client-certificate authentication (`ssl.CERT_REQUIRED`) and drops untrusted connections.
 
-### 📦 2. Database & High-Throughput Queue
-- **Module**: [`hub/db.py`](file:///c:/Users/ijgam/OneDrive/Desktop/vernal/hub/db.py)
-- **Features**: High-concurrency SQLite WAL mode database (`busy_timeout=5000`) housing `nodes`, `vulnerabilities`, `cve_mirror`, and `delta_snapshots`. Fast indexed lookup on `(package_name, ecosystem, affected_version)` delivering sub-0.1ms scan queue latency.
+### 📦 2. Dependency Manifest Extractor
+- **Module**: [agent/manifest.py](agent/manifest.py)
+- **Features**: Recursively extracts package-version tuples across `requirements.txt`, `package.json`, `go.mod`, `pom.xml`, and `Cargo.toml`.
 
-### 🕵️ 3. Lightweight Endpoint Agent Daemon
-- **Modules**: [`agent/main.go`](file:///c:/Users/ijgam/OneDrive/Desktop/vernal/agent/main.go), [`agent/inspector.py`](file:///c:/Users/ijgam/OneDrive/Desktop/vernal/agent/inspector.py), [`agent/vulnera-agent.service`](file:///c:/Users/ijgam/OneDrive/Desktop/vernal/agent/vulnera-agent.service)
-- **Features**: Cross-platform OS socket & PID inspector (< 1.5% CPU, < 25MB RAM). Runs persistent panic-recovery mTLS heartbeat loops with resource enforcement (`CPUQuota=5%`, `MemoryMax=50M`).
+### 🔑 3. Shannon Entropy & Secret Scanner
+- **Module**: [agent/entropy.py](agent/entropy.py)
+- **Features**: Calculates string entropy ($H = -\sum p_i \log_2 p_i$). Flags API keys, AWS keys (`AKIA...`), and RSA private keys in `.env` and `.yaml` files where $H > 4.5$.
 
-### 🔑 4. Shannon Entropy & Secret Scanner
-- **Module**: [`agent/entropy.py`](file:///c:/Users/ijgam/OneDrive/Desktop/vernal/agent/entropy.py)
-- **Mathematical Model**: Calculates string entropy using Shannon's formula:
-  $$H(X) = -\sum_{i=1}^{n} P(x_i) \log_2 P(x_i)$$
-- **Features**: Flags hidden API keys, AWS keys (`AKIA...`), and RSA private keys in `.env` and `.yaml` files where $H > 4.5$. Automatically skips heavy build noise (`.git/`, `node_modules/`).
+### 🔍 4. Known Vulnerability Engine (NVD / OSV Matcher)
+- **Module**: [hub/cve_engine.py](hub/cve_engine.py)
+- **Features**: Offline database matcher cross-referencing package tuples against indexed vulnerability records (e.g. `log4j-core 2.14.1` $\rightarrow$ `CVE-2021-44228` Critical) in sub-millisecond execution time.
 
-### 📦 5. Dependency Manifest Extractor
-- **Module**: [`agent/manifest.py`](file:///c:/Users/ijgam/OneDrive/Desktop/vernal/agent/manifest.py)
-- **Features**: Recursively extracts package-version tuples across `requirements.txt`, `package.json`, `go.mod`, `pom.xml`, and `Cargo.toml`. Handles corrupted syntax gracefully without daemon panics.
+### ⚡ 5. Unknown Zero-Day AST Taint Engine
+- **Module**: [hub/ast_engine.py](hub/ast_engine.py)
+- **Features**: AST visitor tracking untrusted data flow from Sources to Sinks (`eval`, `exec`, unparameterized string concatenation SQL queries). Zero false positives on safe parameterized queries.
 
-### 🔍 6. Known Vulnerability Engine (NVD / OSV Matcher)
-- **Module**: [`hub/cve_engine.py`](file:///c:/Users/ijgam/OneDrive/Desktop/vernal/hub/cve_engine.py)
-- **Features**: Offline local database matcher cross-referencing package tuples against indexed vulnerability records (e.g. `log4j-core 2.14.1` $\rightarrow$ `CVE-2021-44228` Critical) in sub-millisecond execution time.
-
-### ⚡ 7. Unknown Zero-Day AST Taint Engine
-- **Module**: [`hub/ast_engine.py`](file:///c:/Users/ijgam/OneDrive/Desktop/vernal/hub/ast_engine.py)
-- **Features**: AST visitor tracking untrusted data flow from **Sources** (`request.args`, `user_input`) to dangerous **Sinks** (`eval`, `exec`, unparameterized string concatenation SQL queries). Zero false positives on safe parameterized queries.
-
-### 🛡️ 8. Baseline Delta Anomaly Engine
-- **Module**: [`hub/delta_engine.py`](file:///c:/Users/ijgam/OneDrive/Desktop/vernal/hub/delta_engine.py)
+### 🛡️ 6. Baseline Delta Anomaly Engine
+- **Module**: [hub/delta_engine.py](hub/delta_engine.py)
 - **Features**: SHA-256 cryptographic baseline recorder detecting 1-byte binary tampering and unmapped rogue process listeners (`nc -l -p 9999`).
 
-### 🔗 9. Vulnerability Deduplication Stream Pipeline
-- **Module**: [`hub/dedup.py`](file:///c:/Users/ijgam/OneDrive/Desktop/vernal/hub/dedup.py)
-- **Features**: Computes SHA-256 fingerprints:
-  $$\text{Fingerprint} = \text{SHA256}(\text{Asset\_Type} + \text{Path} + \text{Rule\_ID})$$
-  Collapses 500+ duplicate host findings into 1 master issue record with attached host lists.
-
-### 📊 10. Multi-Format Exporters & Admin Dashboard
-- **Modules**: [`hub/exporter.py`](file:///c:/Users/ijgam/OneDrive/Desktop/vernal/hub/exporter.py), [`dashboard/index.html`](file:///c:/Users/ijgam/OneDrive/Desktop/vernal/dashboard/index.html), [`hub/server.py`](file:///c:/Users/ijgam/OneDrive/Desktop/vernal/hub/server.py)
-- **Features**: RFC 4180 compliant CSV exporter with quote/comma escaping, SIEM JSON format, Executive PDF summary generator, and single-page Master Control Center UI with RBAC role support (`Admin` vs `Auditor`).
+### 🔗 7. Vulnerability Deduplication Stream Pipeline
+- **Module**: [hub/dedup.py](hub/dedup.py)
+- **Features**: Computes `SHA256(Asset_Type + Path + Rule_ID)`, collapsing 500+ duplicate host findings into 1 master issue record with attached host lists.
 
 ---
 
 ## ⚙️ Quick Start Guide
-
-### Prerequisites
-- Python 3.10+
-- Go 1.20+ (Optional for Go agent daemon compilation)
 
 ### 1. Launch the Master Control Center
 ```bash
@@ -118,7 +111,7 @@ go run agent/main.go
 
 ## 🧪 Verification Test Suite Results
 
-All 10 post-build verification tests in [`tests/verification_harness.py`](file:///c:/Users/ijgam/OneDrive/Desktop/vernal/tests/verification_harness.py) are **100% PASSING**:
+All 10 post-build verification tests in [tests/verification_harness.py](tests/verification_harness.py) are **100% PASSING**:
 
 | Test ID | Subsystem | Test Objective | Status |
 |---|---|---|---|
@@ -148,18 +141,19 @@ vernal/
 ├── dashboard/
 │   └── index.html             # Master Control Center Single-Page UI
 ├── hub/
-│   ├── server.py              # Master Control Hub HTTP/REST Server
-│   ├── db.py                  # PostgreSQL/SQLite WAL DB Stack
-│   ├── cve_engine.py          # Offline NVD/OSV CVE Matcher
-│   ├── ast_engine.py          # Zero-Day AST Taint SAST Engine
-│   ├── delta_engine.py        # Baseline SHA-256 Anomaly Scanner
-│   ├── dedup.py               # Aggregation & Deduplication Pipeline
-│   └── exporter.py            # RFC 4180 CSV, SIEM JSON & PDF Exporters
+│   ├── server.py               # Master Control Hub HTTP/REST Server
+│   ├── enterprise_extensions.py# Auth, Compliance, Integrations & Multi-tenancy
+│   ├── db.py                   # PostgreSQL/SQLite WAL DB Stack
+│   ├── cve_engine.py           # Offline NVD/OSV CVE Matcher
+│   ├── ast_engine.py           # Zero-Day AST Taint SAST Engine
+│   ├── delta_engine.py         # Baseline SHA-256 Anomaly Scanner
+│   ├── dedup.py                # Aggregation & Deduplication Pipeline
+│   └── exporter.py             # RFC 4180 CSV, SIEM JSON & PDF Exporters
 ├── pki/
 │   └── mtls.py                # X.509 Certificate Generator & mTLS Validator
 ├── tests/
-│   └── verification_harness.py# 10/10 Automated Verification Tests
-├── vulnera_map_banner.svg     # Generated Enterprise Header Banner
+│   └── verification_harness.py # 10/10 Automated Verification Tests
+├── vulnera_map_banner.svg      # Generated Enterprise Header Banner
 ├── run_tests.py               # Top-level Test Runner
 └── README.md                  # Master System Documentation
 ```

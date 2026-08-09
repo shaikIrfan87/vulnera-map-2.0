@@ -19,6 +19,7 @@ from hub.ast_engine import UnknownVulnerabilityEngine
 from hub.delta_engine import BaselineDeltaEngine
 from hub.dedup import EventTracerAndDeduplicationPipeline
 from hub.exporter import ExportWorkers
+from hub.enterprise_extensions import EnterpriseExtensions
 
 class MasterHubServer:
     def __init__(self, port=50051):
@@ -31,10 +32,11 @@ class MasterHubServer:
         self.pipeline = EventTracerAndDeduplicationPipeline()
         self.exporter = ExportWorkers()
         self.entropy_scanner = EntropySecretScanner()
+        self.ext = EnterpriseExtensions()
         
         self.nodes = {
-            "Enterprise-Node-01": {"node_id": "Enterprise-Node-01", "hostname": "Enterprise-Node-01", "ip_address": "192.168.1.101", "status": "ACTIVE", "last_heartbeat": time.time()},
-            "Enterprise-Node-02": {"node_id": "Enterprise-Node-02", "hostname": "Enterprise-Node-02", "ip_address": "192.168.1.102", "status": "ACTIVE", "last_heartbeat": time.time()}
+            "Enterprise-Node-01": {"node_id": "Enterprise-Node-01", "hostname": "Enterprise-Node-01", "ip_address": "192.168.1.101", "status": "ACTIVE", "last_heartbeat": time.time(), "bu": "Finance", "env": "Prod-AWS-US-East"},
+            "Enterprise-Node-02": {"node_id": "Enterprise-Node-02", "hostname": "Enterprise-Node-02", "ip_address": "192.168.1.102", "status": "ACTIVE", "last_heartbeat": time.time(), "bu": "Engineering", "env": "Dev-K8s-Cluster-01"}
         }
         self.anomalies = []
         self.run_initial_scans()
@@ -60,7 +62,9 @@ class MasterHubServer:
             "hostname": data.get("hostname", nid),
             "ip_address": data.get("ip_address", "127.0.0.1"),
             "status": "ACTIVE",
-            "last_heartbeat": time.time()
+            "last_heartbeat": time.time(),
+            "bu": data.get("bu", "Finance"),
+            "env": data.get("env", "Prod-AWS-US-East")
         }
         return {"status": "ok", "message": "Heartbeat authenticated", "timestamp": time.time()}
 
@@ -85,10 +89,10 @@ class MasterHubServer:
 
     def execute_control_action(self, action, role="Admin", auth_header=""):
         if role != "Admin":
+            self.ext.log_audit_event("user", role, action, "REJECTED: Permission Denied")
             return "PERMISSION DENIED: Auditor role cannot execute control actions."
         
-        if auth_header and "Bearer" in auth_header and "invalid" in auth_header:
-            return "UNAUTHORIZED: Invalid API Token."
+        self.ext.log_audit_event("admin_user", role, action, "SUCCESS: Executed control action")
 
         for nid in self.nodes:
             self.nodes[nid]["last_heartbeat"] = time.time()
@@ -159,10 +163,15 @@ class MasterHubServer:
             st = "ACTIVE" if now - node["last_heartbeat"] < 60 else "OFFLINE"
             node_list.append({**node, "status": st})
 
+        vulns = list(self.pipeline.master_tickets.values())
+        compliance = self.ext.map_compliance(vulns)
+
         return {
+            "hierarchy": self.ext.hierarchy,
             "nodes": node_list,
-            "vulnerabilities": list(self.pipeline.master_tickets.values()),
-            "anomalies": self.anomalies
+            "vulnerabilities": vulns,
+            "anomalies": self.anomalies,
+            "compliance": compliance
         }
 
 def run_app():
@@ -171,7 +180,6 @@ def run_app():
 
     class RequestHandler(http.server.SimpleHTTPRequestHandler):
         def log_message(self, format, *args):
-            # Suppress noisy standard HTTP access logs for clean terminal output
             pass
 
         def do_GET(self):
@@ -188,6 +196,18 @@ def run_app():
                 self.send_header("Content-Type", "application/json")
                 self.end_headers()
                 self.wfile.write(json.dumps(hub.get_dashboard_state()).encode("utf-8"))
+            elif parsed_path.path == "/api/agent/update":
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps(hub.ext.get_ota_update_info()).encode("utf-8"))
+            elif parsed_path.path == "/api/compliance":
+                vulns = list(hub.pipeline.master_tickets.values())
+                report = hub.ext.map_compliance(vulns)
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps(report, indent=2).encode("utf-8"))
             elif parsed_path.path == "/api/export/csv":
                 self.send_response(200)
                 self.send_header("Content-Type", "text/csv")
@@ -209,6 +229,20 @@ def run_app():
                 self.end_headers()
                 with open(pdf_file, "rb") as f:
                     self.wfile.write(f.read())
+            elif parsed_path.path == "/api/export/jira":
+                vulns = list(hub.pipeline.master_tickets.values())
+                payload = hub.ext.generate_jira_issue_payload(vulns[0] if vulns else {})
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps(payload, indent=2).encode("utf-8"))
+            elif parsed_path.path == "/api/export/syslog":
+                vulns = list(hub.pipeline.master_tickets.values())
+                syslog_msg = hub.ext.generate_syslog_rfc5424(vulns[0] if vulns else {"title": "System Active", "severity": "Info"})
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain")
+                self.end_headers()
+                self.wfile.write(syslog_msg.encode("utf-8"))
             else:
                 self.send_response(404)
                 self.end_headers()
@@ -218,7 +252,21 @@ def run_app():
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
 
-            if parsed_path.path == "/api/agent/heartbeat":
+            if parsed_path.path == "/api/auth/login":
+                try:
+                    payload = json.loads(post_data.decode('utf-8'))
+                except Exception:
+                    payload = {}
+                user = payload.get("username", "admin")
+                role = payload.get("role", "Admin")
+                token = hub.ext.create_jwt_token(user, role)
+                hub.ext.log_audit_event(user, role, "USER_LOGIN", "Issued JWT token")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "ok", "token": token, "user": user, "role": role}).encode("utf-8"))
+
+            elif parsed_path.path == "/api/agent/heartbeat":
                 try:
                     payload = json.loads(post_data.decode('utf-8'))
                 except Exception:
