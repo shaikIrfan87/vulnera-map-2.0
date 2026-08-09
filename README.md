@@ -1,6 +1,6 @@
 <div align="center">
 
-![VULNERA-MAP Enterprise Banner](file:///C:/Users/ijgam/.gemini/antigravity/brain/c1105503-5002-47d2-9b4d-a7583686b71d/vulnera_map_banner_1786265928623.jpg)
+![VULNERA-MAP Enterprise Banner](vulnera_map_banner.svg)
 
 # 🛡️ VULNERA-MAP Enterprise
 
@@ -159,7 +159,7 @@ vernal/
 │   └── mtls.py                # X.509 Certificate Generator & mTLS Validator
 ├── tests/
 │   └── verification_harness.py# 10/10 Automated Verification Tests
-├── vulnera_map_banner.jpg     # Generated Enterprise Header Banner
+├── vulnera_map_banner.svg     # Generated Enterprise Header Banner
 ├── run_tests.py               # Top-level Test Runner
 └── README.md                  # Master System Documentation
 ```
