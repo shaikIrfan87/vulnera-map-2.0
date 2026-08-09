@@ -169,7 +169,7 @@ vernal/
 <div align="center">
 
 **VULNERA-MAP Enterprise** — High-Performance Zero-Trust Cybersecurity Platform
-
+***I am a student. If I did anything wrong, please send me requiest i am ready to connect.***
 </div>
 
-***I am a student. If I did anything wrong, please send me requiest i am ready to connect.***
+
