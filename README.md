@@ -171,3 +171,5 @@ vernal/
 **VULNERA-MAP Enterprise** — High-Performance Zero-Trust Cybersecurity Platform
 
 </div>
+
+***I am a student. If I did anything wrong, please send me requiest i am ready to connect.***
